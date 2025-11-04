@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3 uid="uid://cfiqg7icfp5rs"]
+
+[ext_resource type="Script" uid="uid://cwht3wcuo7kxa" path="res://Digineaux/Godot 4/Fuzzy Match/Examples - safe to delete/FuzTest.gd" id="1_3yjve"]
+[ext_resource type="PackedScene" uid="uid://dael4qk11637s" path="res://Digineaux/Godot 4/Fuzzy Match/Examples - safe to delete/fuzzy_list.tscn" id="2_0a3xg"]
+
+[node name="Control" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Node" type="Node" parent="."]
+script = ExtResource("1_3yjve")
+
+[node name="FuzzyList" parent="." instance=ExtResource("2_0a3xg")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+grow_horizontal = 1
+grow_vertical = 1
