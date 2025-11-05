@@ -13,7 +13,7 @@ This was built for and tested on godot 4.5. But is most likely backwards compati
 
 Installation
 
-Put the root folder into your godot porjects assets folder. 
+Put the "Digineaux" folder into your godot projects assets folder. 
 Make sure to extract it first if you download it as a .zip.
 
 Contact
