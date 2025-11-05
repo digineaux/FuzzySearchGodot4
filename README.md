@@ -7,6 +7,15 @@ It makes use of a slightly customized levenshtein algorithm which scores based o
 
 I tested it pretty thouroughly, but it's yet to see field testing. So don't be shy in reporting issues.
 
+Compatibility
+
+This was built for and tested on godot 4.5. But is most likely backwards compatible to previous Godot 4 versions and forwards compatible to future versions.
+
+Installation
+
+Put the root folder into your godot porjects assets folder. 
+Make sure to extract it first if you download it as a .zip.
+
 Contact
 
 digineaux@gmail.com
