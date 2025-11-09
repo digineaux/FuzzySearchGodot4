@@ -34,8 +34,8 @@ static func levenshtein(a: String, b: String, caseSensitive:=false) -> int:
 	return table[rows-1][cols-1]
 
 
-##Normalizes a Levenstein result as a %
-static func similarity(a: String, b: String,caseSensitive:=false) -> float:
+##Normalizes a Levenstein result as a % 0-1
+static func similarityLevenstein(a: String, b: String,caseSensitive:=false) -> float:
 	if a.is_empty() and b.is_empty():
 		return 1.0
 	var distance := levenshtein(a, b,caseSensitive)
@@ -52,8 +52,8 @@ static func AlphabetizeString(s: String) -> String:
 
 ##Alphabetizes the order of characters in both strings to account for letter ujmbling.
 static func hybrid_score(query: String, target: String, caseSensitive:=false) -> float:
-	var score1 := similarity(query, target,caseSensitive)
-	var score2 := similarity(AlphabetizeString(query), AlphabetizeString(target),caseSensitive)
+	var score1 := similarityLevenstein(query, target,caseSensitive)
+	var score2 := similarityLevenstein(AlphabetizeString(query), AlphabetizeString(target),caseSensitive)
 
 	var weight_original := 0.7  # prioritize actual order of letters
 	var weight_jumble := 0.3    # partial credit for jumbled letters
@@ -69,7 +69,7 @@ static func ListComparisons(query: String, stringsToCompare: PackedStringArray,t
 	var hybrid:=0.0
 	
 	for term in stringsToCompare:
-		score= similarity(query,term,caseSensitive)
+		score= similarityLevenstein(query,term,caseSensitive)
 		hybrid= hybrid_score(query,term,caseSensitive)
 		if score<=threshold&& hybrid<= threshold: continue #skip if term doesnt score high enough
 		
