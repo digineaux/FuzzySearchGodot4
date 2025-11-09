@@ -71,7 +71,8 @@ static func ListComparisons(query: String, stringsToCompare: PackedStringArray,t
 	for term in stringsToCompare:
 		score= similarityLevenstein(query,term,caseSensitive)
 		hybrid= hybrid_score(query,term,caseSensitive)
-		if score<=threshold&& hybrid<= threshold: continue #skip if term doesnt score high enough
+		
+		if score<threshold&& hybrid< threshold: continue #skip if term doesnt score high enough
 		
 		var result:= FuzResult.new()
 		result.term =query
