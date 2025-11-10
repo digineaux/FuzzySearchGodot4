@@ -59,7 +59,7 @@ static func NumberOfDifferences(termA: String, termB: String) -> Array[float]:
 			)
 			prev = temp
 	var changes:=row[lenB]
-	var similarityPercent:=1.0 - float(row[lenB]) / float(lenA+ lenB)
+	var similarityPercent:=1.0 - float(changes) / float(lenA+ lenB)
 
 	return [changes,similarityPercent]
 
