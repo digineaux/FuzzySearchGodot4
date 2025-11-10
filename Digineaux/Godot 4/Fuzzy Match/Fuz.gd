@@ -51,14 +51,6 @@ static func NumberOfDifferences(termA: String, termB: String,maxlength:=20, case
 		return 1.0 - float(row[lenB]) / float(lenA+ lenB)
 	return row[lenB]
 
-##Normalizes a Levenstein result as a % 0-1
-static func similarityLevenstein(a: String, b: String,caseSensitive:=false) -> float:
-	if a.is_empty() and b.is_empty():
-		return 1.0
-	var distance := NumberOfDifferences(a, b,caseSensitive)
-	var max_len :float= max(a.length(), b.length())
-	return 1.0 - float(distance) / float(max_len)
-
 ##faster than levenstein. But intended only for strings of the same length
 static func HammingDistance(a: String, b: String, caseSensitive:=false,alphabetize:=true) -> int:
 	if not caseSensitive:
@@ -94,19 +86,16 @@ static func AlphabetizeString(s: String) -> String:
 static func ListComparisons(query: String, stringsToCompare: PackedStringArray,threshold:=0.01,caseSensitive:=false,sort:=true,sortByHybridScore:=true) -> Array[FuzResult]:
 	var results:Array[FuzResult]=[]
 	var score:=0.0
-	var hybrid:=0.0
 	
 	for term in stringsToCompare:
-		score= similarityLevenstein(query,term,caseSensitive)
-		hybrid= Compare(query,term,caseSensitive)
+		score= Compare(query,term,caseSensitive)
 		
-		if score<threshold&& hybrid< threshold: continue #skip if term doesnt score high enough
+		if score<threshold: continue #skip if term doesnt score high enough
 		
 		var result:= FuzResult.new()
 		result.term =query
 		result.comparedTo=term
 		result.levenshteinScore=score
-		result.hybridScore=hybrid
 		result.differences=NumberOfDifferences(query,term,caseSensitive)
 		
 		results.append(result)
