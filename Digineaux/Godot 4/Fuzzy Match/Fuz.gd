@@ -1,24 +1,31 @@
 class_name Fuz
 
+##Max length truncates characters to match the max length, if it's >0
+##alphabetize rearranges characters into alphabetical order. This i useful to compare ujmbled worsd
 static func Format( termA: String, termB: String,maxlength:=20,caseSensitive:=false, alphabetize:=true)->Array[String]:
 	if not caseSensitive:
 		termA = termA.to_lower()
 		termB = termB.to_lower()
 
 	if alphabetize:  # Good for dyslexic accessibility
-		termA = AlphabetizeString(termA)
-		termB = AlphabetizeString(termB)
+		var chars:= termA.split("")
+		chars.sort()
+		termA = "".join(chars)
+		
+		chars= termB.split("")
+		chars.sort()
+		termB = "".join(chars)
 	
 	if maxlength>=1:
 		termA=termA.substr(0,maxlength)
 		termB=termB.substr(0,maxlength)
 	return [termA,termB]
 
-##Returns the number of edits required to turn one string into the other.
+##Returns an array[numberOfChanges,%similarity]using a modified levenshteing algorithm
 ##Counts insertions, deletions, or substitutions as per Levenshtein algo
-static func NumberOfDifferences(termA: String, termB: String,returnPercent:=true) -> float:
+static func NumberOfDifferences(termA: String, termB: String) -> Array[float]:
 	if termA == termB:
-		return 0  # early exit if identical
+		return [0,1]  # early exit if identical
 	
 	var lenA:=termA.length()
 	var lenB:=termB.length()
@@ -51,14 +58,15 @@ static func NumberOfDifferences(termA: String, termB: String,returnPercent:=true
 				prev + cost      # substitution
 			)
 			prev = temp
+	var changes:=row[lenB]
+	var similarityPercent:=1.0 - float(row[lenB]) / float(lenA+ lenB)
 
-	if returnPercent:
-		return 1.0 - float(row[lenB]) / float(lenA+ lenB)
-	return row[lenB]
+	return [changes,similarityPercent]
 
 ##faster than levenstein. But intended only for strings of the same length
-static func HammingDistance(a: String, b: String) -> int:
-	if a==b:return 0
+## returns an array[changesInt,%match]
+static func HammingDistance(a: String, b: String) -> Array[float]:
+	if a==b:return [0,1]
 	
 	var changes:=0
 	#use length of shortest string
@@ -67,59 +75,45 @@ static func HammingDistance(a: String, b: String) -> int:
 	for i in range(min_len):
 		if a[i] != b[i]:
 			changes += 1
-	changes += abs(a.length() - b.length())	
-	return changes
-
-##Reorders a strings characters alphabetically
-static func AlphabetizeString(s: String) -> String:
-	var chars := s.split("")
-	chars.sort()
-	return "".join(chars)
+	changes += abs(a.length() - b.length())
+	return [changes,1.0 - float(changes) / float(max(a.length(), b.length()))]
 
 ##list of comparisons with scores
-##Optionally ordered by scroe
-static func ListComparisons(query: String, stringsToCompare: PackedStringArray,threshold:=0.01,caseSensitive:=false,sort:=true,sortByHybridScore:=true) -> Array[FuzResult]:
+##Optionally ordered by score
+## those that score below the threshold are ignored
+static func ListComparisons(query: String, stringsToCompare: PackedStringArray,threshold:=0.01,sorted:=true) -> Array[FuzResult]:
 	var results:Array[FuzResult]=[]
-	var score:=0.0
+	var score:Array[float]=[]
 	
 	for term in stringsToCompare:
-		score= Compare(query,term,caseSensitive)
+		score= Compare(query,term,)
 		
-		if score<threshold: continue #skip if term doesnt score high enough
+		if score[1]<threshold: continue #skip if term doesnt score high enough
 		
 		var result:= FuzResult.new()
 		result.term =query
 		result.comparedTo=term
-		result.levenshteinScore=score
-		result.differences=NumberOfDifferences(query,term,caseSensitive)
+		result.score=score[1]
+		result.differences=score[0]
 		
 		results.append(result)
 	
-	if sort:
+	if sorted:
 		# sort descending
 		results.sort_custom(func(a:FuzResult, b:FuzResult):
-			if sortByHybridScore:
-				return b.hybridScore < a.hybridScore
-			else:
-				return b.levenshteinScore < a.levenshteinScore
+			return b.score < a.score
 		)
 	return results
 
 ##returns the amount of edits required for one string to become another
+##returns array[edits,%similarity]
 ## combines multiple algorithms tuned to be more convenient to user in cases of a search engine or autocomplete
-static func Compare(termA:String,termB:String,caseSensitive:=false, alphabetize:=true)->int:
-	if not caseSensitive:
-		termA = termA.to_lower()
-		termB = termB.to_lower()
-	if alphabetize:#Good for dyslexic accessibility. The order of letters doesn't mattter. Can sometimes produce false posistives.
-		termA = AlphabetizeString(termA)
-		termB = AlphabetizeString(termB)
-	
-	if termA == termB: return 0 #exit early if exact match
-	var edits:=0
+static func Compare(termA:String,termB:String)->Array[float]:
+	if termA == termB: return [0,1] #exit early if exact match
+	var edits:Array[float]=[]
 	if termA.length()==termB.length():
-		edits=HammingDistance(termA,termB,caseSensitive,alphabetize)
+		edits=HammingDistance(termA,termB)
 	else:
-		edits=NumberOfDifferences(termA,termB,caseSensitive,alphabetize)
+		edits=NumberOfDifferences(termA,termB)
 	
 	return edits
