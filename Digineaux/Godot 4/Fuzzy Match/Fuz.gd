@@ -2,69 +2,63 @@ class_name Fuz
 
 ##Returns the number of edits required to turn one string into the other.
 ##insertions, deletions, or substitutions
-static func levenshtein(termA: String, termB: String, caseSensitive:=false,alphabetize:=true) -> int:
+static func NumberOfDifferences(termA: String, termB: String, caseSensitive:=false, alphabetize:=true, stopAtThisManyComparisons:=-1) -> int:
 	if not caseSensitive:
 		termA = termA.to_lower()
 		termB = termB.to_lower()
-	if alphabetize:#Good for dyslexic accessibility. The order of letters doesn't mattter. Can sometimes produce false posistives.
+
+	if alphabetize:  # Good for dyslexic accessibility
 		termA = AlphabetizeString(termA)
 		termB = AlphabetizeString(termB)
-	
-	if termA == termB: return 0 #exit early if exact match
-	
-	var aLength = termA.length()
-	var bLength = termB.length()
-	#exit if either string is empty, returning the length of the other, which repsents the difference and therefore changes
-	if aLength == 0:return bLength
-	if bLength == 0:return aLength
 
-	# Initialize two rows
-	var prev_row := []
-	var curr_row := []
+	if termA == termB:
+		return 0  # early exit if identical
 
-	for i in range(bLength + 1):
-		prev_row.append(i)
-	
-	#basically iterates along a table of [termA.letter,termB.letter]
-	for i in range(1, aLength + 1):
-		curr_row.resize(bLength + 1)
-		curr_row[0] = i
-		for j in range(1, bLength + 1):
+	var lenA = termA.length()
+	var lenB = termB.length()
+
+	# Swap to always iterate the shorter string
+	if lenA < lenB:
+		var tmp = termA
+		termA = termB
+		termB = tmp
+		var tmpLen = lenA
+		lenA = lenB
+		lenB = tmpLen
+
+	# Initialize single row
+	var row := []
+	for j in range(lenB + 1):
+		row.append(j)
+
+	# Main loop
+	for i in range(1, lenA + 1):
+		var prev = row[0]
+		row[0] = i
+		var min_in_row = row[0]
+
+		for j in range(1, lenB + 1):
+			var temp = row[j]
 			var cost = 0 if termA[i - 1] == termB[j - 1] else 1
-			curr_row[j] = min(
-				curr_row[j - 1] + 1,      # insertion
-				prev_row[j] + 1,          # deletion
-				prev_row[j - 1] + cost    # substitution
+			row[j] = min(
+				row[j] + 1,      # deletion
+				row[j - 1] + 1,  # insertion
+				prev + cost      # substitution
 			)
-		prev_row = curr_row.duplicate()
-	
-	return curr_row[bLength]
+			prev = temp
+			min_in_row = min(min_in_row, row[j])
 
-static func LogicalLevenshtein(termA: String, termB: String, caseSensitive:=false, alphabetize=true):
-	if not caseSensitive:
-		termA = termA.to_lower()
-		termB = termB.to_lower()
-	if alphabetize:#Good for dyslexic accessibility. The order of letters doesn't mattter. Can sometimes produce false posistives.
-		termA = AlphabetizeString(termA)
-		termB = AlphabetizeString(termB)
-	
-	if termA == termB: return 0 #exit early if exact match
-	
-	var aLength = termA.length()
-	var bLength = termB.length()
-	#exit if either string is empty, returning the length of the other, which repsents the difference and therefore changes
-	if aLength == 0:return bLength
-	if bLength == 0:return aLength
-	
-	if bLength==aLength:return HammingDistance(termA,termB,caseSensitive,alphabetize)#use the faster hamming distance algo if the srings length matches
-	
-	
+		# Early exit if minimum in this row exceeds threshold
+		if stopAtThisManyComparisons >= 0 and min_in_row > stopAtThisManyComparisons:
+			return stopAtThisManyComparisons + 1
+
+	return row[lenB] if stopAtThisManyComparisons < 0 or row[lenB] <= stopAtThisManyComparisons else stopAtThisManyComparisons + 1
 
 ##Normalizes a Levenstein result as a % 0-1
 static func similarityLevenstein(a: String, b: String,caseSensitive:=false) -> float:
 	if a.is_empty() and b.is_empty():
 		return 1.0
-	var distance := levenshtein(a, b,caseSensitive)
+	var distance := NumberOfDifferences(a, b,caseSensitive)
 	var max_len :float= max(a.length(), b.length())
 	return 1.0 - float(distance) / float(max_len)
 
