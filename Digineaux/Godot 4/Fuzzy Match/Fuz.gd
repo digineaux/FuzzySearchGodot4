@@ -74,14 +74,15 @@ static func HammingDistance(a: String, b: String, caseSensitive:=false,alphabeti
 	if a==b:return 0
 	
 	var changes:=0
-	
-	var aLength:= a.length()
+
 	#use length of shortest string
-	if b.length()<aLength:aLength-=b.length()
-	if b.length()>aLength:changes+= b.length()-aLength
+	var min_len = min(a.length(), b.length())
 	
-	for i:int in range(aLength):
-		if a[i] != b[i]:changes+=1
+	for i in range(min_len):
+		if a[i] != b[i]:
+			changes += 1
+	changes += abs(a.length() - b.length())
+
 	
 	return changes
 
