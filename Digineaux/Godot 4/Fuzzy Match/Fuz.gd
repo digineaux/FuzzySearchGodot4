@@ -1,8 +1,8 @@
 class_name Fuz
 
 ##Returns the number of edits required to turn one string into the other.
-##insertions, deletions, or substitutions
-static func NumberOfDifferences(termA: String, termB: String, caseSensitive:=false, alphabetize:=true, stopAtThisManyComparisons:=-1) -> int:
+##Counts insertions, deletions, or substitutions as per Levenshtein algo
+static func NumberOfDifferences(termA: String, termB: String,maxlength:=20, caseSensitive:=false, alphabetize:=true,returnPercent:=true) -> float:
 	if not caseSensitive:
 		termA = termA.to_lower()
 		termB = termB.to_lower()
@@ -13,11 +13,12 @@ static func NumberOfDifferences(termA: String, termB: String, caseSensitive:=fal
 
 	if termA == termB:
 		return 0  # early exit if identical
+	
+	if maxlength<=0: maxlength= clampi(maxlength,1,maxlength)
+	var lenA:int = min(termA.length(),maxlength)
+	var lenB:int =  min(termB.length(),maxlength)
 
-	var lenA = termA.length()
-	var lenB = termB.length()
-
-	# Swap to always iterate the shorter string
+	# Swap to always iterate the shorter string - less iterations, better performance
 	if lenA < lenB:
 		var tmp = termA
 		termA = termB
@@ -27,7 +28,7 @@ static func NumberOfDifferences(termA: String, termB: String, caseSensitive:=fal
 		lenB = tmpLen
 
 	# Initialize single row
-	var row := []
+	var row :Array[int]= []
 	for j in range(lenB + 1):
 		row.append(j)
 
@@ -35,7 +36,6 @@ static func NumberOfDifferences(termA: String, termB: String, caseSensitive:=fal
 	for i in range(1, lenA + 1):
 		var prev = row[0]
 		row[0] = i
-		var min_in_row = row[0]
 
 		for j in range(1, lenB + 1):
 			var temp = row[j]
@@ -46,13 +46,10 @@ static func NumberOfDifferences(termA: String, termB: String, caseSensitive:=fal
 				prev + cost      # substitution
 			)
 			prev = temp
-			min_in_row = min(min_in_row, row[j])
 
-		# Early exit if minimum in this row exceeds threshold
-		if stopAtThisManyComparisons >= 0 and min_in_row > stopAtThisManyComparisons:
-			return stopAtThisManyComparisons + 1
-
-	return row[lenB] if stopAtThisManyComparisons < 0 or row[lenB] <= stopAtThisManyComparisons else stopAtThisManyComparisons + 1
+	if returnPercent:
+		return 1.0 - float(row[lenB]) / float(lenA+ lenB)
+	return row[lenB]
 
 ##Normalizes a Levenstein result as a % 0-1
 static func similarityLevenstein(a: String, b: String,caseSensitive:=false) -> float:
@@ -110,7 +107,7 @@ static func ListComparisons(query: String, stringsToCompare: PackedStringArray,t
 		result.comparedTo=term
 		result.levenshteinScore=score
 		result.hybridScore=hybrid
-		result.differences=levenshtein(query,term,caseSensitive)
+		result.differences=NumberOfDifferences(query,term,caseSensitive)
 		
 		results.append(result)
 	
@@ -139,6 +136,6 @@ static func Compare(termA:String,termB:String,caseSensitive:=false, alphabetize:
 	if termA.length()==termB.length():
 		edits=HammingDistance(termA,termB,caseSensitive,alphabetize)
 	else:
-		edits=levenshtein(termA,termB,caseSensitive,alphabetize)
+		edits=NumberOfDifferences(termA,termB,caseSensitive,alphabetize)
 	
 	return edits
