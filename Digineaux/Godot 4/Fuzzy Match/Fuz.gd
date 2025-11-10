@@ -1,38 +1,64 @@
 class_name Fuz
 
-##Reteurns the number of edits required to turn one string into the other
-static func levenshtein(a: String, b: String, caseSensitive:=false) -> int:
+##Returns the number of edits required to turn one string into the other.
+##insertions, deletions, or substitutions
+static func levenshtein(termA: String, termB: String, caseSensitive:=false,alphabetize:=true) -> int:
 	if not caseSensitive:
-		a = a.to_lower()
-		b = b.to_lower()
-	var rows = a.length() + 1
-	var cols = b.length() + 1
-	var table: Array = []
+		termA = termA.to_lower()
+		termB = termB.to_lower()
+	if alphabetize:#Good for dyslexic accessibility. The order of letters doesn't mattter. Can sometimes produce false posistives.
+		termA = AlphabetizeString(termA)
+		termB = AlphabetizeString(termB)
+	
+	if termA == termB: return 0 #exit early if exact match
+	
+	var aLength = termA.length()
+	var bLength = termB.length()
+	#exit if either string is empty, returning the length of the other, which repsents the difference and therefore changes
+	if aLength == 0:return bLength
+	if bLength == 0:return aLength
 
-	# Initialize table with zeros
-	for _i in range(rows):
-		var row := []
-		for _j in range(cols):
-			row.append(0)
-		table.append(row)
+	# Initialize two rows
+	var prev_row := []
+	var curr_row := []
 
-	# Base cases
-	for i in range(rows):
-		table[i][0] = i
-	for j in range(cols):
-		table[0][j] = j
-
-	# Fill table
-	for i in range(1, rows):
-		for j in range(1, cols):
-			var cost = 0 if a[i-1] == b[j-1] else 1
-			table[i][j] = min(
-				table[i-1][j] + 1,      # deletion
-				table[i][j-1] + 1,      # insertion
-				table[i-1][j-1] + cost  # substitution
+	for i in range(bLength + 1):
+		prev_row.append(i)
+	
+	#basically iterates along a table of [termA.letter,termB.letter]
+	for i in range(1, aLength + 1):
+		curr_row.resize(bLength + 1)
+		curr_row[0] = i
+		for j in range(1, bLength + 1):
+			var cost = 0 if termA[i - 1] == termB[j - 1] else 1
+			curr_row[j] = min(
+				curr_row[j - 1] + 1,      # insertion
+				prev_row[j] + 1,          # deletion
+				prev_row[j - 1] + cost    # substitution
 			)
-	return table[rows-1][cols-1]
+		prev_row = curr_row.duplicate()
+	
+	return curr_row[bLength]
 
+static func LogicalLevenshtein(termA: String, termB: String, caseSensitive:=false, alphabetize=true):
+	if not caseSensitive:
+		termA = termA.to_lower()
+		termB = termB.to_lower()
+	if alphabetize:#Good for dyslexic accessibility. The order of letters doesn't mattter. Can sometimes produce false posistives.
+		termA = AlphabetizeString(termA)
+		termB = AlphabetizeString(termB)
+	
+	if termA == termB: return 0 #exit early if exact match
+	
+	var aLength = termA.length()
+	var bLength = termB.length()
+	#exit if either string is empty, returning the length of the other, which repsents the difference and therefore changes
+	if aLength == 0:return bLength
+	if bLength == 0:return aLength
+	
+	if bLength==aLength:return HammingDistance(termA,termB,caseSensitive,alphabetize)#use the faster hamming distance algo if the srings length matches
+	
+	
 
 ##Normalizes a Levenstein result as a % 0-1
 static func similarityLevenstein(a: String, b: String,caseSensitive:=false) -> float:
@@ -42,24 +68,34 @@ static func similarityLevenstein(a: String, b: String,caseSensitive:=false) -> f
 	var max_len :float= max(a.length(), b.length())
 	return 1.0 - float(distance) / float(max_len)
 
+##faster than levenstein. But intended only for strings of the same length
+static func HammingDistance(a: String, b: String, caseSensitive:=false,alphabetize:=true) -> int:
+	if not caseSensitive:
+		a = a.to_lower()
+		b = b.to_lower()
+	if alphabetize:#Good for dyslexic accessibility. The order of letters doesn't mattter. Can sometimes produce false posistives.
+		a = AlphabetizeString(a)
+		b = AlphabetizeString(b)
+
+	if a==b:return 0
+	
+	var changes:=0
+	
+	var aLength:= a.length()
+	#use length of shortest string
+	if b.length()<aLength:aLength-=b.length()
+	if b.length()>aLength:changes+= b.length()-aLength
+	
+	for i:int in range(aLength):
+		if a[i] != b[i]:changes+=1
+	
+	return changes
 
 ##Reorders a strings characters alphabetically
 static func AlphabetizeString(s: String) -> String:
 	var chars := s.split("")
 	chars.sort()
 	return "".join(chars)
-
-
-##Alphabetizes the order of characters in both strings to account for letter ujmbling.
-static func hybrid_score(query: String, target: String, caseSensitive:=false) -> float:
-	var score1 := similarityLevenstein(query, target,caseSensitive)
-	var score2 := similarityLevenstein(AlphabetizeString(query), AlphabetizeString(target),caseSensitive)
-
-	var weight_original := 0.7  # prioritize actual order of letters
-	var weight_jumble := 0.3    # partial credit for jumbled letters
-
-	return clamp(score1 * weight_original + score2 * weight_jumble, 0.0, 1.0)
-
 
 ##list of comparisons with scores
 ##Optionally ordered by scroe
@@ -70,7 +106,7 @@ static func ListComparisons(query: String, stringsToCompare: PackedStringArray,t
 	
 	for term in stringsToCompare:
 		score= similarityLevenstein(query,term,caseSensitive)
-		hybrid= hybrid_score(query,term,caseSensitive)
+		hybrid= Compare(query,term,caseSensitive)
 		
 		if score<threshold&& hybrid< threshold: continue #skip if term doesnt score high enough
 		
@@ -92,3 +128,22 @@ static func ListComparisons(query: String, stringsToCompare: PackedStringArray,t
 				return b.levenshteinScore < a.levenshteinScore
 		)
 	return results
+
+##returns the amount of edits required for one string to become another
+## combines multiple algorithms tuned to be more convenient to user in cases of a search engine or autocomplete
+static func Compare(termA:String,termB:String,caseSensitive:=false, alphabetize:=true)->int:
+	if not caseSensitive:
+		termA = termA.to_lower()
+		termB = termB.to_lower()
+	if alphabetize:#Good for dyslexic accessibility. The order of letters doesn't mattter. Can sometimes produce false posistives.
+		termA = AlphabetizeString(termA)
+		termB = AlphabetizeString(termB)
+	
+	if termA == termB: return 0 #exit early if exact match
+	var edits:=0
+	if termA.length()==termB.length():
+		edits=HammingDistance(termA,termB,caseSensitive,alphabetize)
+	else:
+		edits=levenshtein(termA,termB,caseSensitive,alphabetize)
+	
+	return edits
