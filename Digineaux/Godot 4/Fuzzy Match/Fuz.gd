@@ -1,8 +1,6 @@
 class_name Fuz
 
-##Returns the number of edits required to turn one string into the other.
-##Counts insertions, deletions, or substitutions as per Levenshtein algo
-static func NumberOfDifferences(termA: String, termB: String,maxlength:=20, caseSensitive:=false, alphabetize:=true,returnPercent:=true) -> float:
+static func Format( termA: String, termB: String,maxlength:=20,caseSensitive:=false, alphabetize:=true)->Array[String]:
 	if not caseSensitive:
 		termA = termA.to_lower()
 		termB = termB.to_lower()
@@ -10,13 +8,20 @@ static func NumberOfDifferences(termA: String, termB: String,maxlength:=20, case
 	if alphabetize:  # Good for dyslexic accessibility
 		termA = AlphabetizeString(termA)
 		termB = AlphabetizeString(termB)
+	
+	if maxlength>=1:
+		termA=termA.substr(0,maxlength)
+		termB=termB.substr(0,maxlength)
+	return [termA,termB]
 
+##Returns the number of edits required to turn one string into the other.
+##Counts insertions, deletions, or substitutions as per Levenshtein algo
+static func NumberOfDifferences(termA: String, termB: String,returnPercent:=true) -> float:
 	if termA == termB:
 		return 0  # early exit if identical
 	
-	if maxlength<=0: maxlength= clampi(maxlength,1,maxlength)
-	var lenA:int = min(termA.length(),maxlength)
-	var lenB:int =  min(termB.length(),maxlength)
+	var lenA:=termA.length()
+	var lenB:=termB.length()
 
 	# Swap to always iterate the shorter string - less iterations, better performance
 	if lenA < lenB:
@@ -52,27 +57,17 @@ static func NumberOfDifferences(termA: String, termB: String,maxlength:=20, case
 	return row[lenB]
 
 ##faster than levenstein. But intended only for strings of the same length
-static func HammingDistance(a: String, b: String, caseSensitive:=false,alphabetize:=true) -> int:
-	if not caseSensitive:
-		a = a.to_lower()
-		b = b.to_lower()
-	if alphabetize:#Good for dyslexic accessibility. The order of letters doesn't mattter. Can sometimes produce false posistives.
-		a = AlphabetizeString(a)
-		b = AlphabetizeString(b)
-
+static func HammingDistance(a: String, b: String) -> int:
 	if a==b:return 0
 	
 	var changes:=0
-
 	#use length of shortest string
 	var min_len = min(a.length(), b.length())
 	
 	for i in range(min_len):
 		if a[i] != b[i]:
 			changes += 1
-	changes += abs(a.length() - b.length())
-
-	
+	changes += abs(a.length() - b.length())	
 	return changes
 
 ##Reorders a strings characters alphabetically
