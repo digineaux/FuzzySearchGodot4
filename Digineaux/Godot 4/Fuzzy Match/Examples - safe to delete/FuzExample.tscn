@@ -12,12 +12,8 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Node" type="Node" parent="."]
+process_mode = 4
 script = ExtResource("1_3yjve")
 
 [node name="FuzzyList" parent="." instance=ExtResource("2_0a3xg")]
-layout_mode = 0
-anchors_preset = 0
-anchor_right = 0.0
-anchor_bottom = 0.0
-grow_horizontal = 1
-grow_vertical = 1
+layout_mode = 1

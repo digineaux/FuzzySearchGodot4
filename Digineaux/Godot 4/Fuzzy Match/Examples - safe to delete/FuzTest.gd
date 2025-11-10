@@ -17,7 +17,6 @@ var terms:=[
 func _ready() -> void:
 	for term:String in terms:
 		for term2:String in terms:
-			var levenshteinScore:=Fuz.similarity(term,term2,true)
-			var hybridScore:=Fuz.hybrid_score(term,term2,true)
-			print(term +" levenstein= "+str(levenshteinScore)+"\n"
-			+term2 + " Hybrid score= " + str(hybridScore)+"\n")
+			var comparison:Array[float]=Fuz.Compare(term,term2)
+			print(term +": number of differences= "+str(comparison[0])+"\n"
+			+term2 + " % similar= " + str(comparison[1]*100)+"%\n")

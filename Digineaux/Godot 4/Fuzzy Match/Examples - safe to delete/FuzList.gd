@@ -18,5 +18,5 @@ func _ready() -> void:
 	
 	for entry:FuzResult in entries:
 		var label := Label.new()
-		label.text = entry.term +"|" +entry.comparedTo+ ". Diff= "+str(entry.differences)+ " , Levenstein score= "+str(entry.levenshteinScore)+". Hybrid score= "+ str(entry.hybridScore) 
+		label.text = entry.term +"|" +entry.comparedTo+ ". Diff= "+str(entry.differences)+ " , Similarity= "+str(entry.similarity)
 		add_child(label)

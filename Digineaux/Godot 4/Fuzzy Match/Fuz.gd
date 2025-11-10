@@ -93,7 +93,7 @@ static func ListComparisons(query: String, stringsToCompare: PackedStringArray,t
 		var result:= FuzResult.new()
 		result.term =query
 		result.comparedTo=term
-		result.score=score[1]
+		result.similarity=score[1]
 		result.differences=score[0]
 		
 		results.append(result)
@@ -101,7 +101,7 @@ static func ListComparisons(query: String, stringsToCompare: PackedStringArray,t
 	if sorted:
 		# sort descending
 		results.sort_custom(func(a:FuzResult, b:FuzResult):
-			return b.score < a.score
+			return b.similarity < a.similarity
 		)
 	return results
 
